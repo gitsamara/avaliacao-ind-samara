@@ -1,3 +1,5 @@
+const Aluno = require('../models/aluno.js');
+
 const criarAluno = async (req, res) => {
   try {
     const { nome, idade } = req.body;
