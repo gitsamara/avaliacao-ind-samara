@@ -1,41 +1,61 @@
+const Professor = require('../models/professor.js');
 
 const criarProfessor = async (req, res) => {
-  const { nome, idade, disciplinasIds } = req.body;
+  try {
+    const { nome, idade, disciplinasIds } = req.body;
 
-  const novoProfessor = new Professor({
-    nome,
-    idade,
-    disciplinas: disciplinasIds
-  });
+    if (!nome || !idade) {
+      return res.status(400).json({ erro: 'Nome e idade são obrigatórios.' });
+    }
 
-  await novoProfessor.save();
+    const novoProfessor = new Professor({ nome, idade, disciplinas: disciplinasIds || [] });
+    await novoProfessor.save();
 
-  res.json({
-    message: "Professor criado com sucesso!",
-    professor: novoProfessor,
-  });
+    return res.status(201).json({ message: 'Professor criado com sucesso!', professor: novoProfessor });
+  } catch (err) {
+    return res.status(500).json({ erro: 'Erro ao criar professor.', detalhe: err.message });
+  }
 };
 
 const obterTodosProfessores = async (req, res) => {
-  const professores = await Professor.find().populate('disciplinas');
-  res.json(professores);
+  try {
+    const professores = await Professor.find().populate('disciplinas');
+    return res.status(200).json(professores);
+  } catch (err) {
+    return res.status(500).json({ erro: 'Erro ao buscar professores.', detalhe: err.message });
+  }
 };
 
 const deletarProfessor = async (req, res) => {
-  const { id } = req.params;
+  try {
+    const { id } = req.params;
+    const professor = await Professor.findById(id);
+    if (!professor) return res.status(404).json({ erro: 'Professor não encontrado.' });
 
-  await Professor.deleteOne({ _id: id });
-  res.json({ message: "Professor removido com sucesso!" });
+    await Professor.deleteOne({ _id: id });
+    return res.status(200).json({ message: 'Professor removido com sucesso!' });
+  } catch (err) {
+    return res.status(500).json({ erro: 'Erro ao deletar professor.', detalhe: err.message });
+  }
 };
 
 const editarProfessor = async (req, res) => {
-  const { id } = req.params;
-  const { nome, idade, disciplinasIds } = req.body;
+  try {
+    const { id } = req.params;
+    const { nome, idade, disciplinasIds } = req.body;
 
-  let professor = await Professor.findByIdAndUpdate(id, { nome, idade, disciplinas: disciplinasIds });
-  res.status(200).json({
-    message: "Professor atualizado com sucesso!",
-    professor,
-  });
+    const professor = await Professor.findByIdAndUpdate(
+      id,
+      { nome, idade, disciplinas: disciplinasIds },
+      { new: true }
+    );
+
+    if (!professor) return res.status(404).json({ erro: 'Professor não encontrado.' });
+
+    return res.status(200).json({ message: 'Professor atualizado com sucesso!', professor });
+  } catch (err) {
+    return res.status(500).json({ erro: 'Erro ao editar professor.', detalhe: err.message });
+  }
 };
 
+module.exports = { criarProfessor, obterTodosProfessores, deletarProfessor, editarProfessor };

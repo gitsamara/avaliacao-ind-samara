@@ -1,40 +1,70 @@
-
 const criarAluno = async (req, res) => {
-  const { nome, idade } = req.body;
+  try {
+    const { nome, idade } = req.body;
 
-  const novoAluno = new Aluno({
-    nome,
-    idade,
-  });
+    if (!nome || !idade) {
+      return res.status(400).json({ erro: 'Nome e idade são obrigatórios.' });
+    }
 
-  await novoAluno.save();
+    const novoAluno = new Aluno({ nome, idade });
+    await novoAluno.save();
 
-  res.json({
-    message: "Aluno criado com sucesso!",
-    aluno: novoAluno,
-  });
+    return res.status(201).json({
+      message: 'Aluno criado com sucesso!',
+      aluno: novoAluno,
+    });
+  } catch (err) {
+    return res.status(500).json({ erro: 'Erro ao criar aluno.', detalhe: err.message });
+  }
 };
 
 const obterTodosAlunos = async (req, res) => {
-  const alunos = await Aluno.find().populate('perfil');
-  res.json(alunos);
+  try {
+    const alunos = await Aluno.find().populate('perfil');
+    return res.status(200).json(alunos);
+  } catch (err) {
+    return res.status(500).json({ erro: 'Erro ao buscar alunos.', detalhe: err.message });
+  }
 };
 
 const deletarAluno = async (req, res) => {
-  const { id } = req.params;
+  try {
+    const { id } = req.params;
 
-  await Aluno.deleteOne({ _id: id });
-  res.json({ message: 'Aluno removido com sucesso!' });
+    const aluno = await Aluno.findById(id);
+    if (!aluno) {
+      return res.status(404).json({ erro: 'Aluno não encontrado.' });
+    }
+
+    await Aluno.deleteOne({ _id: id });
+    return res.status(200).json({ message: 'Aluno removido com sucesso!' });
+  } catch (err) {
+    return res.status(500).json({ erro: 'Erro ao deletar aluno.', detalhe: err.message });
+  }
 };
 
 const editarAluno = async (req, res) => {
-  const { id } = req.params;
-  const { nome, idade } = req.body;
+  try {
+    const { id } = req.params;
+    const { nome, idade } = req.body;
 
-  let aluno = await Aluno.findByIdAndUpdate(id, { nome, idade });
-  res.status(200).json({
-    message: 'Aluno atualizado com sucesso!',
-    aluno,
-  });
+    const aluno = await Aluno.findByIdAndUpdate(
+      id,
+      { nome, idade },
+      { new: true } // retorna o documento atualizado
+    );
+
+    if (!aluno) {
+      return res.status(404).json({ erro: 'Aluno não encontrado.' });
+    }
+
+    return res.status(200).json({
+      message: 'Aluno atualizado com sucesso!',
+      aluno,
+    });
+  } catch (err) {
+    return res.status(500).json({ erro: 'Erro ao editar aluno.', detalhe: err.message });
+  }
 };
 
+module.exports = { criarAluno, obterTodosAlunos, deletarAluno, editarAluno };
